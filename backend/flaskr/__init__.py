@@ -1,10 +1,12 @@
 import os
+import types
 from flask import Flask, request, abort, jsonify
+from flask.globals import session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
 
-from models import setup_db, Question, Category
+from models import setup_db, Question, Category, db
 
 QUESTIONS_PER_PAGE = 10
 
@@ -18,7 +20,7 @@ def create_app(test_config=None):
     @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
 
-    cors = CORS(app, rescources={r"/api/*": {"origins": "*"}})
+    cors = CORS(app, rescources={"/*": {"origins": "*"}})
 
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
@@ -39,14 +41,16 @@ def create_app(test_config=None):
     """
 
     @app.route("/categories", methods=["GET"])
-    def retrieve_categories():
-        selection = Category.query.order_by(Category.id).all
+    def get_categories():
 
-        return jsonify(
-            {
-                "success": True,
-            }
-        )
+        selection = Category.query.all()
+
+        categories = {}
+
+        for category in selection:
+            categories[category.id] = category.type
+
+        return jsonify({"success": True, "categories": categories})
 
     """
     @TODO: 
@@ -60,6 +64,13 @@ def create_app(test_config=None):
     ten questions per page and pagination at the bottom of the screen for three pages.
     Clicking on the page numbers should update the questions. 
     """
+
+    @app.route("/questions", methods=["GET"])
+    def get_questions():
+
+        selection = Question.query.all()
+
+        questions = {}
 
     """
     @TODO: 
