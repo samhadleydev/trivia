@@ -11,6 +11,18 @@ from models import setup_db, Question, Category, db
 QUESTIONS_PER_PAGE = 10
 
 
+def paginate_questions(request, question_selection):
+    page = request.args.get("page", 1, type=int)
+    start = (page - 1) * QUESTIONS_PER_PAGE
+    end = start + QUESTIONS_PER_PAGE
+
+    formatted_questions = [question.format() for question in question_selection]
+
+    paginated_questions = formatted_questions[start:end]
+
+    return paginated_questions
+
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -37,20 +49,24 @@ def create_app(test_config=None):
         return response
 
     """
-    @TODO: Create an endpoint to handle GET requests for all available categories.
+    @DONE: Create an endpoint to handle GET requests for all available categories.
     """
+
+    categories_selection = Category.query.order_by(Category.id).all()
+
+    categories_total = len(categories_selection)
+    categories = {}
+
+    for category in categories_selection:
+        categories[category.id] = category.type
 
     @app.route("/categories", methods=["GET"])
     def get_categories():
 
-        selection = Category.query.all()
-
-        categories = {}
-
-        for category in selection:
-            categories[category.id] = category.type
-
-        return jsonify({"success": True, "categories": categories})
+        if categories_total == 0:
+            abort(404)
+        else:
+            return jsonify({"success": True, "categories": categories})
 
     """
     @TODO: 
@@ -68,9 +84,21 @@ def create_app(test_config=None):
     @app.route("/questions", methods=["GET"])
     def get_questions():
 
-        selection = Question.query.all()
+        questions_selection = Question.query.all()
+        questions_total = len(questions_selection)
+        questions = paginate_questions(request, questions_selection)
 
-        questions = {}
+        if questions_total == 0:
+            abort(404)
+        else:
+            return jsonify(
+                {
+                    "success": True,
+                    "questions": questions,
+                    "questions_total": questions_total,
+                    "categories": categories,
+                }
+            )
 
     """
     @TODO: 
